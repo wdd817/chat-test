@@ -1,0 +1,3 @@
+[submodule "config/Google-profanity-words"]
+	path = config/Google-profanity-words
+	url = https://github.com/RobertJGabriel/Google-profanity-words
