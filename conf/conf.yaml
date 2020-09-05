@@ -1,3 +1,5 @@
-server:
-  listen: 0.0.0.0
+gateway:
   port: 8080
+
+log:
+  level: debug

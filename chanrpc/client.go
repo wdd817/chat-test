@@ -1,32 +1,53 @@
 package chanrpc
 
 import (
+	"chat-test/util"
 	"errors"
 	"fmt"
-	"runtime"
-
-	"chat-test/conf"
-	"chat-test/log"
 )
 
+// rpc客户端
 type Client struct {
-	s       *Server
-	pending int
-	ChanRet chan *RetInfo
+	s                *Server
+	pendingAsyncCall int
+	chanSyncRet      chan *RetInfo
+	ChanAsyncRet     chan *RetInfo
 }
 
+// NewClient 创建一个rpc客户端
 func NewClient(l int) *Client {
 	return &Client{
-		ChanRet: make(chan *RetInfo, l),
+		ChanAsyncRet: make(chan *RetInfo, l),
 	}
 }
 
+// Attach 挂载rpc服务器
 func (c *Client) Attach(s *Server) {
 	c.s = s
 }
 
+func (c *Client) Call(id interface{}, arg interface{}) (interface{}, error) {
+	f := c.s.functions[id]
+	if f == nil {
+		return nil, fmt.Errorf("function id %v: function not registered", id)
+	}
+
+	err := c.call(&CallInfo{
+		f:       f,
+		arg:     arg,
+		chanRet: c.chanSyncRet,
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+
+	ri := <-c.chanSyncRet
+	return ri.ret, ri.err
+}
+
+// Async 异步调用
 func (c *Client) Async(id interface{}, arg interface{}, cb Callback) {
-	if c.pending >= cap(c.ChanRet) {
+	if c.pendingAsyncCall >= cap(c.ChanAsyncRet) {
 		c.execCb(&RetInfo{
 			err: errors.New("too many calls"),
 			cb:  cb,
@@ -35,20 +56,24 @@ func (c *Client) Async(id interface{}, arg interface{}, cb Callback) {
 	}
 
 	c.async(id, arg, cb)
-	c.pending++
+	c.pendingAsyncCall++
 }
 
-func (c *Client) call(ci *CallInfo) (err error) {
+func (c *Client) call(ci *CallInfo, block bool) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
 		}
 	}()
 
-	select {
-	case c.s.ChanCall <- ci:
-	default:
-		err = errors.New("chanrpc channel full")
+	if block {
+		c.s.ChanCall <- ci
+	} else {
+		select {
+		case c.s.ChanCall <- ci:
+		default:
+			err = errors.New("chanrpc channel full")
+		}
 	}
 	return
 }
@@ -56,7 +81,7 @@ func (c *Client) call(ci *CallInfo) (err error) {
 func (c *Client) async(id interface{}, arg interface{}, cb Callback) {
 	f := c.s.functions[id]
 	if f == nil {
-		c.ChanRet <- &RetInfo{
+		c.ChanAsyncRet <- &RetInfo{
 			err: fmt.Errorf("function id %v: function not registered", id),
 			cb:  cb,
 		}
@@ -64,12 +89,13 @@ func (c *Client) async(id interface{}, arg interface{}, cb Callback) {
 	}
 
 	err := c.call(&CallInfo{
+		f:       f,
 		arg:     arg,
 		cb:      cb,
-		chanRet: c.ChanRet,
-	})
+		chanRet: c.ChanAsyncRet,
+	}, false)
 	if err != nil {
-		c.ChanRet <- &RetInfo{
+		c.ChanAsyncRet <- &RetInfo{
 			err: err,
 			cb:  cb,
 		}
@@ -78,32 +104,24 @@ func (c *Client) async(id interface{}, arg interface{}, cb Callback) {
 }
 
 func (c *Client) execCb(ri *RetInfo) {
-	defer func() {
-		if r := recover(); r != nil {
-			if conf.LenStackBuf > 0 {
-				buf := make([]byte, conf.LenStackBuf)
-				l := runtime.Stack(buf, false)
-				log.Error("%v: %s", r, buf[:l])
-			} else {
-				log.Error("%v", r)
-			}
-		}
-	}()
-
+	defer util.PrintPanicStack()
 	ri.cb(ri.ret, ri.err)
 }
 
+// Cb 执行结束后的回调
 func (c *Client) Cb(ri *RetInfo) {
-	c.pending--
+	c.pendingAsyncCall--
 	c.execCb(ri)
 }
 
+// Close 关闭客户端
 func (c *Client) Close() {
-	for c.pending > 0 {
-		c.Cb(<-c.ChanRet)
+	for c.pendingAsyncCall > 0 {
+		c.Cb(<-c.ChanAsyncRet)
 	}
 }
 
+// Idle 是否空闲
 func (c *Client) Idle() bool {
-	return c.pending == 0
+	return c.pendingAsyncCall == 0
 }

@@ -1,42 +1,24 @@
-- 模块拆分
-- word filter
-    - 多过滤器
-    - 过滤器管理
-        - 想到的最简单的方式是, 配置指定N个过滤器
-        - id 取模来选取过滤器, 防止消息错位
-- chat server
-- chat session
-- chat room
-    - 消息统计
-    - 消息历史
+- 运行环境为Go1.5
+- 项目入口就是main.go
+- 分三个模块
+    - gate模块, 承载连接
+    - word filter, 敏感词过滤
+    - chat, 聊天室
+- 每个模块单独goroutine
+- 第三方库
+    - github.com/gorilla/websocket, websocket功能
+    - github.com/gookit/config 用于读取yaml
 
+- 项目目录说明:
+    - app 单例, 管理module
+    - chanrpc 实现了单机下, 基于chan的rpc
+    - chat 聊天室, 主要是用来存储消息的
+    - conf 全局配置变量
+    - gate 承载连接
+    - log 简易的logger
+    - module 定义了module接口, 与一个集成了chanrpc的skeleton
+    - network 网络相关
+    - proto 内部rpc通信协议
+    - util 打印堆栈
+    - wordfilter 过滤模块
 
-- 模块
-    - 生命周期管理
-    - 模块间通信
-        - chanrpc
-            - 注册消息处理
-            - 消息传递 
-            - 应该只有异步调用
-
-
-- 简易chan RPC
-    - 所有请求与返回的go struct定义
-    - 建立公用req -> resp的映射 (待定)
-    - client call server
-    - server response
-
-
-- 用户流程
-    - 连接到服务器
-    - 输入名字
-    - 加入聊天室
-    - 获取最近的50条消息
-    - 说话
-        - 收到消息
-        - 敏感词过滤
-        - 投递给聊天服务器
-    - 命令
-        - 收到消息
-        - 判断命令
-        - 投递给聊天服务器

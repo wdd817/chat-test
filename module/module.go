@@ -1,6 +1,7 @@
 package module
 
 import (
+	"chat-test/chanrpc"
 	"runtime"
 	"sync"
 
@@ -9,9 +10,11 @@ import (
 )
 
 type Module interface {
-	OnInit()
+	OnInit() error
 	OnDestroy()
 	Run(closeSig chan bool)
+	Name() string
+	ChanRPC() *chanrpc.Server
 }
 
 type module struct {

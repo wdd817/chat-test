@@ -13,12 +13,11 @@ type Server struct {
 	ChanCall chan *CallInfo
 }
 
-
 // NewServer 创建RPC服务器
 func NewServer(l int) *Server {
 	return &Server{
 		functions: make(map[interface{}]CallFunc),
-		ChanCall: make(chan *CallInfo, l),
+		ChanCall:  make(chan *CallInfo, l),
 	}
 }
 
@@ -51,24 +50,48 @@ func (s *Server) ret(ci *CallInfo, ri *RetInfo) (err error) {
 
 // Exec 执行调用
 func (s *Server) Exec(ci *CallInfo) {
-	ret := s.functions[ci.f](ci.arg)
+	ret := ci.f(ci.arg)
 	err := s.ret(ci, &RetInfo{ret: ret})
 	if err != nil {
 		log.Error("%v", err)
 	}
 }
 
+// Go 本地异步调用, 无回调
+func (s *Server) Go(id interface{}, arg interface{}) {
+	f := s.functions[id]
+	if f == nil {
+		return
+	}
+
+	defer func() {
+		recover()
+	}()
+
+	s.ChanCall <- &CallInfo{
+		f:   f,
+		arg: arg,
+	}
+}
+
+// Call 本地同步调用, 带返回值
+func (s *Server) Call(id interface{}, arg interface{}) (interface{}, error) {
+	return s.OpenClient(0).Call(id, arg)
+}
+
+// Close 关闭rpc服务器并完成所有请求处理
 func (s *Server) Close() {
 	close(s.ChanCall)
 
 	for ci := range s.ChanCall {
-		_ = s.ret(ci, &RetInfo{
+		s.ret(ci, &RetInfo{
 			err: errors.New("chanrpc server closed"),
 		})
 	}
 }
 
-func (s *Server) Open(l int) *Client {
+// OpenClient 创建客户端
+func (s *Server) OpenClient(l int) *Client {
 	c := NewClient(l)
 	c.Attach(s)
 	return c
