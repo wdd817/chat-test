@@ -9,6 +9,12 @@
     - github.com/gorilla/websocket, websocket功能
     - github.com/gookit/config 用于读取yaml
 
+- 测试方法
+    - go run test/test.go
+        - 两个方式
+            - 终端
+            - 网页端, http://localhost:8888
+
 - 项目目录说明:
     - app 单例, 管理module
     - chanrpc 实现了单机下, 基于chan的rpc
@@ -21,4 +27,3 @@
     - proto 内部rpc通信协议
     - util 打印堆栈
     - wordfilter 过滤模块
-

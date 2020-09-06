@@ -125,7 +125,6 @@ func (dfa *DFAUtil) HandleWord(sentence string, replaceCh byte) (string, bool) {
 		return sentence, false
 	}
 
-	// Manipulate
 	sentenceList := []byte(sentence)
 	for _, matchIndexObj := range matchIndexList {
 		for index := matchIndexObj.start; index <= matchIndexObj.end; index++ {

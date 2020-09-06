@@ -23,26 +23,6 @@ func (logger *stdOutLogger) SetLevel(level LogLevel) {
 	logger.LogLevel = level
 }
 
-// func (logger *stdOutLogger) Debug(args ...interface{}) {
-// 	logger.print(DebugLevel, args)
-// }
-//
-// func (logger *stdOutLogger) Info(args ...interface{}) {
-// 	logger.print(InfoLevel, args)
-// }
-//
-// func (logger *stdOutLogger) Warn(args ...interface{}) {
-// 	logger.print(WarnLevel, args)
-// }
-//
-// func (logger *stdOutLogger) Error(args ...interface{}) {
-// 	logger.print(ErrorLevel, args)
-// }
-//
-// func (logger *stdOutLogger) Fatal(args ...interface{}) {
-// 	logger.print(FatalLevel, args)
-// }
-
 func (logger *stdOutLogger) Info(format string, args ...interface{}) {
 	logger.printf(InfoLevel, format, args...)
 }

@@ -11,10 +11,6 @@ github.com/gookit/goutil/mathutil
 github.com/gookit/goutil/strutil
 github.com/gookit/goutil/sysutil
 github.com/gookit/goutil/sysutil/process
-# github.com/gookit/ini/v2 v2.0.5
-## explicit
-github.com/gookit/ini/v2
-github.com/gookit/ini/v2/parser
 # github.com/gorilla/websocket v1.4.2
 ## explicit
 github.com/gorilla/websocket

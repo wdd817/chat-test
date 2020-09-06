@@ -18,6 +18,7 @@ type Client struct {
 func NewClient(l int) *Client {
 	return &Client{
 		ChanAsyncRet: make(chan *RetInfo, l),
+		chanSyncRet: make(chan *RetInfo, 1),
 	}
 }
 

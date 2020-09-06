@@ -82,6 +82,8 @@ func (gate *Gateway) loginReq(msg string, a *agent) {
 			if !resp.Success {
 				a.WriteMsg("Name already exists, please try again:")
 			} else {
+				a.WriteMsg([]byte("You have logined"))
+
 				gate.agents[a.logging] = a
 				a.userID = a.logging
 				a.logging = 0
@@ -118,18 +120,18 @@ func (gate *Gateway) statsReq(msg string, a *agent) {
 	}
 
 	gate.skeleton.Async(app.Instance().GetChanRPC(conf.ChatModule), &proto.StatsReq{
-		Name: msg,
+		Name: segs[1],
 	}, func(resp0 interface{}, err error) {
 		if err != nil {
 			log.Error("get stats failed: %v", err)
 			return
 		}
 
-		resp := resp0.(*proto.PopularResp)
-		if len(resp.Word) == 0 {
-			a.WriteMsg("Current has NO popular world!")
+		resp := resp0.(*proto.StatsResp)
+		if len(resp.TimeStr) == 0 {
+			a.WriteMsg(fmt.Sprintf("Cannot find user: %v", msg))
 		} else {
-			a.WriteMsg(fmt.Sprintf("Current popular word: %v", resp.Word))
+			a.WriteMsg(resp.TimeStr)
 		}
 	})
 }

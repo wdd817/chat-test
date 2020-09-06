@@ -25,7 +25,7 @@ func (chat *Chat) OnChatMsgReq(req0 interface{}) interface{} {
 	chat.broadCast(fmt.Sprintf("[%s] [%s] %s",
 		time.Unix(m.timestamp, 0).String(),
 		m.sender,
-		user.Name,
+		req.Content,
 	))
 	return &proto.ChatMsgResp{}
 }

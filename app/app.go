@@ -33,7 +33,7 @@ type mod struct {
 	wg       sync.WaitGroup
 }
 
-// DefaultApp 默认单例
+// Instance 默认单例
 func Instance() *App {
 	return singleton
 }
@@ -49,7 +49,6 @@ func NewApp() *App {
 }
 
 // App .
-// modules 在初始化(通过 Start 或 Run) 之后不能变更
 // 有两种启停方式:
 // 	1. Start -> Stop: 手动启动和停止app，比较干净，通常用于测试代码
 //  2. Run -> Terminate: 基于Start/Stop封装，自动监听OS Signal或通过Terminate来终止，通常用于真正的节点启动流程
@@ -140,13 +139,11 @@ func (app *App) GetChanRPC(name string) *chanrpc.Server {
 	return nil
 }
 
-// run 启动所有模块
 func run(m *mod) {
 	m.mi.Run(m.closeSig)
 	m.wg.Done()
 }
 
-// destroy 销毁模块
 func destroy(m *mod) {
 	defer util.PrintPanicStack()
 	m.mi.OnDestroy()
@@ -155,7 +152,6 @@ func destroy(m *mod) {
 // Run 阻塞启动app
 func (app *App) Run(mods ...module.Module) {
 	app.Start(mods...)
-	// 信号监听 优雅退出
 	for {
 		signal.Notify(app.closeSig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 		sig := <-app.closeSig
